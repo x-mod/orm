@@ -1,0 +1,85 @@
+version: v1
+object: table
+name: user
+comment: ""
+attributes:
+  table: user
+  engine: innodb
+  charset: utf8mb4
+tags:
+  - json
+  - yaml
+fields:
+  - name: id
+    type: int32
+    comment: name of Hello
+    attributes:
+      autoIncrement: true
+  - name: name
+    type: string
+    comment: name of Hello
+    attributes:
+      primary: true
+      index: true
+  - name: Age
+    type: int32
+    comment: age of Hello
+    attributes:
+      nullable: true
+  - name: Sex
+    type: bool
+    attributes:
+      dbtype: TINYINT
+  - name: FooBar
+    type: int32
+    comment: fooBar
+    tags:
+      json: foo
+      yaml: bar
+    attributes:
+      nullable: true
+  - name: CreateAt
+    type: datetime
+    comment: create_at
+  - name: UpdateAt
+    type: datetime
+    comment: update_at
+    attributes:
+      nullable: true
+uniques:
+  - fields:
+      - name
+indexes:
+  - fields:
+      - age
+      - sex
+primary:
+  - id
+---
+version: v1
+object: query
+name: summary
+tags:
+  - json
+  - yaml
+fields:
+  - name: id
+    type: int32
+    comment: name of Hello
+    attributes:
+      autoIncrement: true
+  - name: name
+    type: string
+    comment: name of Hello
+    attributes:
+      primary: true
+      index: true
+  - name: Age
+    type: int32
+    comment: age of Hello
+    attributes:
+      nullable: true
+  - name: Sex
+    type: bool
+    attributes:
+      dbtype: TINYINT

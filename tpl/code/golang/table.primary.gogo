@@ -1,0 +1,42 @@
+{{define "table.primary"}}{{- $primary := . -}}
+type {{$primary.Table.Name}}PK struct{
+	{{- range $field := $primary.Fields}}
+    {{$field.Name}}  {{$field.Type "golang"}} 
+    {{- end}}
+}
+
+func (m *_{{$primary.Table.Name}}Mgr) NewPK() *{{$primary.Table.Name}}PK {
+		return &{{$primary.Table.Name}}PK{}
+}
+
+func (u *{{$primary.Table.Name}}PK) SQLFormat() []string {
+	return []string{
+		{{- range $j, $field := $primary.Fields}}
+		"{{$field.DBColumn}} = ?",
+		{{- end}}
+	}
+}
+
+func (u *{{$primary.Table.Name}}PK) SQLParams() []interface{} {
+	return []interface{}{
+		{{- range $j, $field := $primary.Fields}}
+			{{- if $field.IsPassword}}
+			Password(u.{{$field.Value}}),       
+			{{- else if $field.IsEncode}}
+			Encoder.Encode(u.{{$field.Value}}),
+			{{- else }}
+			u.{{$field.Value}},
+			{{- end}}
+		{{- end}}
+	}
+}
+
+func (u *{{$primary.Table.Name}}PK) DBColumns() []string {
+	return []string{
+		{{- range $j, $field := $primary.Fields}}
+		"{{$field.DBColumn}}",
+		{{- end}}
+	}
+}
+
+{{end}}

@@ -1,0 +1,51 @@
+{{define "query"}}{{- $query := .Query -}}
+package {{.PackageName}}
+
+import (
+	"context"
+	"database/sql"
+	"time"
+
+	"github.com/x-mod/errors"
+)
+
+var (
+    _ sql.DB
+	_ time.Time
+)
+
+
+type {{$query.Name}} struct {
+    {{- range $field := $query.Fields}}
+    {{$field.Name}}  {{$field.Type "golang"}} 
+    {{- if ne (len $query.Tags) 0 -}}
+    `{{$field.Tags $query.Tags}}`
+    {{- end -}}
+    {{- end}}
+}
+
+var {{$query.Name}}DBColumns = []string {
+    {{- range $j, $field := $query.Fields}}
+    "{{$field.DBColumn}}",
+    {{- end}}
+}
+
+type _{{$query.Name}}Mgr struct {
+}
+var {{$query.Name}}Mgr *_{{$query.Name}}Mgr
+
+func (m *_{{$query.Name}}Mgr) New{{$query.Name}}() *{{$query.Name}} {
+    return &{{$query.Name}}{}
+}
+
+type _{{$query.Name}}DBMgr struct {
+	db DB
+}
+
+func {{$query.Name}}DBMgr(db DB) *_{{$query.Name}}DBMgr {
+	return &_{{$query.Name}}DBMgr{db: db}
+}
+
+{{template "query.read" $query}}
+
+{{end}}

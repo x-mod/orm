@@ -1,0 +1,227 @@
+{{define "table.write"}}
+{{- $obj := . -}}
+
+func (m *_{{$obj.Name}}DBMgr) DeleteByPK(ctx context.Context, pk *{{$obj.Name}}PK) (int64, error) {
+	if pk == nil {
+        return 0, errors.New("delete pk required")
+    }
+    return m.Delete(ctx, pk.SQLFormat(), pk.SQLParams()...)
+}
+
+func (m *_{{$obj.Name}}DBMgr) Delete(ctx context.Context, conditions []string, args ...interface{}) (int64, error) {
+    if len(conditions) > 0 {
+        qs := []string{
+            "DELETE",
+            "FROM",
+            "%s",
+            "WHERE",
+            "%s",
+        }
+        ps := []interface{}{
+            "{{$obj.DBName}}",
+            strings.Join(conditions, " AND "),
+        }
+        q := fmt.Sprintf(strings.Join(qs, " "), ps...)
+        return m.execContext(ctx, q, args...)   
+    }
+    return 0, errors.New("delete conditions required")
+}
+
+func (m *_{{$obj.Name}}DBMgr) execContext(ctx context.Context, q string, args ...interface{}) (int64, error) {
+    result, err := m.db.ExecContext(ctx, q, args...)
+    if err != nil {
+        return 0, errors.Annotatef(err, "exec %s %v", q, args)
+    }
+    return result.RowsAffected()
+}
+
+func (m *_{{$obj.Name}}DBMgr) UpdateByPK(ctx context.Context, updates map[string]interface{}, pk *{{$obj.Name}}PK) (int64, error) {
+    return m.Update(ctx, updates, pk.SQLFormat(), pk.SQLParams()...)
+}
+
+func (m *_{{$obj.Name}}DBMgr) Update(ctx context.Context, updates map[string]interface{}, conditions []string, args ...interface{}) (int64, error) {
+    qs := []string{
+            "UPDATE",
+            "%s",
+            "SET",
+            "%s",
+            "WHERE",
+            "%s",
+        }
+    ps := []interface{}{
+        "{{$obj.DBName}}",
+    }
+    fields := []string{}
+    values := []interface{}{}
+    for k, v := range updates {
+        fields = append(fields, fmt.Sprintf("%s = ?", k))
+        values = append(values, v)
+    }
+    ps = append(ps, strings.Join(fields, ","))
+    ps = append(ps, strings.Join(conditions, " AND "))
+    values = append(values, args...)
+    q := fmt.Sprintf(strings.Join(qs, " "), ps...)
+    return m.execContext(ctx, q, values...)   
+}
+
+func (m *_{{$obj.Name}}DBMgr) Create(ctx context.Context, obj *{{$obj.Name}}) (int64, error) {
+    columns := []string{
+        {{- range $j, $field := $obj.Fields}}
+        {{- if $field.IsPrimary}}
+            {{- if not $field.IsAutoIncrement}}
+            "{{$field.DBColumn}}",    
+            {{- end}}
+        {{- else}}
+        "{{$field.DBColumn}}",
+        {{- end}}        
+        {{- end}}
+    }
+    qs := []string{
+            "INSERT",
+            "INTO",
+            "%s",
+            "(%s)",
+            "VALUES",
+            "%s",
+        }
+    ps := []interface{}{
+        "{{$obj.DBName}}",
+        strings.Join(columns, ","),
+    }
+    blanks := []string{}
+    values := []interface{}{}
+    
+    blank := []string{}
+    for i := 0; i < len(columns); i++ {
+        blank = append(blank, "?")
+    }
+    blanks = append(blanks, fmt.Sprintf("(%s)", strings.Join(blank, ",")))
+    {{- range $j, $field := $obj.Fields}}
+    {{- if $field.IsPrimary}}
+        {{- if not $field.IsAutoIncrement}}
+            {{- if and $field.IsNullable $field.IsTime}}
+            if obj.{{$field.Name}} != nil {
+                values = append(values, obj.{{$field.Value}})
+            } else {
+                values = append(values, 0)
+            }            
+            {{- else }}
+                {{- if $field.IsPassword}}
+                values = append(values, Password(obj.{{$field.Value}}))            
+                {{- else if $field.IsEncode}}
+                values = append(values, Encoder.Encode(obj.{{$field.Value}}))        
+                {{- else }}
+                values = append(values, obj.{{$field.Value}})
+                {{- end}}    
+            {{- end}}
+        {{- end}}
+    {{- else}}
+        {{- if and $field.IsNullable $field.IsTime}}
+        if obj.{{$field.Name}} != nil {
+            values = append(values, obj.{{$field.Value}})
+        } else {
+            values = append(values, 0)
+        }
+        {{- else if $field.IsPassword}}
+        values = append(values, Password(obj.{{$field.Value}}))            
+        {{- else if $field.IsEncode}}
+        values = append(values, Encoder.Encode(obj.{{$field.Value}}))        
+        {{- else }}
+        values = append(values, obj.{{$field.Value}})
+        {{- end}}
+    {{- end}}        
+    {{- end}}
+
+    ps = append(ps, strings.Join(blanks, ","))
+    q := fmt.Sprintf(strings.Join(qs, " "), ps...)
+    
+    result, err := m.db.ExecContext(ctx, q, values...)
+    if err != nil {
+        return 0, errors.Annotatef(err, "exec %s %v", q, values)
+    }
+
+    {{- range $i, $field := $obj.PrimaryKey.Fields}}
+        {{- if $field.IsAutoIncrement}}
+        lastInsertId, err := result.LastInsertId()
+		if err != nil {
+			return 0, err
+		}
+		obj.{{$field.Name}} = {{$field.Type "golang"}}(lastInsertId)
+        {{- end}}
+    {{- end}}
+    return result.RowsAffected()
+}
+
+func (m *_{{$obj.Name}}DBMgr) BatchCreate(ctx context.Context, objs []*{{$obj.Name}}) (int64, error) {
+    columns := []string{
+        {{- range $j, $field := $obj.Fields}}
+        {{- if $field.IsPrimary}}
+            {{- if not $field.IsAutoIncrement}}
+            "{{$field.DBColumn}}",    
+            {{- end}}
+        {{- else}}
+        "{{$field.DBColumn}}",
+        {{- end}}        
+        {{- end}}
+    }
+    qs := []string{
+            "INSERT",
+            "INTO",
+            "%s",
+            "(%s)",
+            "VALUES",
+            "%s",
+        }
+    ps := []interface{}{
+        "{{$obj.DBName}}",
+        strings.Join(columns, ","),
+    }
+    blanks := []string{}
+    values := []interface{}{}
+    for _, obj := range objs {
+        blank := []string{}
+        for i := 0; i < len(columns); i++ {
+            blank = append(blank, "?")
+        }
+        blanks = append(blanks, fmt.Sprintf("(%s)", strings.Join(blank, ",")))
+        {{- range $j, $field := $obj.Fields}}
+        {{- if $field.IsPrimary}}
+            {{- if not $field.IsAutoIncrement}}
+                {{- if and $field.IsNullable $field.IsTime}}
+                if obj.{{$field.Name}} != nil {
+                    values = append(values, obj.{{$field.Value}})
+                } else {
+                    values = append(values, 0)
+                }            
+                {{- else }}
+                    {{- if $field.IsPassword}}
+                    values = append(values, Password(obj.{{$field.Value}}))            
+                    {{- else if $field.IsEncode}}
+                    values = append(values, Encoder.Encode(obj.{{$field.Value}}))        
+                    {{- else }}
+                    values = append(values, obj.{{$field.Value}})
+                    {{- end}}                
+                {{- end}}
+            {{- end}}
+        {{- else}}
+            {{- if and $field.IsNullable $field.IsTime}}
+            if obj.{{$field.Name}} != nil {
+                values = append(values, obj.{{$field.Value}})
+            } else {
+                values = append(values, 0)
+            }
+            {{- else if $field.IsPassword}}
+			values = append(values, Password(obj.{{$field.Value}}))            
+            {{- else if $field.IsEncode}}
+			values = append(values, Encoder.Encode(obj.{{$field.Value}}))        
+            {{- else }}
+            values = append(values, obj.{{$field.Value}})
+            {{- end}}
+        {{- end}}        
+        {{- end}}
+    }
+    ps = append(ps, strings.Join(blanks, ","))
+    q := fmt.Sprintf(strings.Join(qs, " "), ps...)
+    return m.execContext(ctx, q, values...)   
+}
+{{end}}

@@ -1,0 +1,65 @@
+{{define "table"}}{{- $table := .Table -}}
+package {{.PackageName}}
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/x-mod/errors"
+)
+
+var (
+    _ sql.DB
+	_ time.Time
+	_ strings.Reader
+)
+
+type {{$table.Name}} struct {
+    {{- range $field := $table.Fields}}
+    {{$field.Name}}  {{$field.Type "golang"}} 
+    {{- if ne (len $table.Tags) 0 -}}
+    `{{$field.Tags $table.Tags}}`
+    {{- end -}}
+    {{- end}}
+}
+
+var {{$table.Name}}DBColumns = []string {
+    {{- range $j, $field := $table.Fields}}
+    "{{$field.DBColumn}}",
+    {{- end}}
+}
+
+type _{{$table.Name}}Mgr struct {
+}
+var {{$table.Name}}Mgr *_{{$table.Name}}Mgr
+
+func (m *_{{$table.Name}}Mgr) New{{$table.Name}}() *{{$table.Name}} {
+    return &{{$table.Name}}{}
+}
+
+type _{{$table.Name}}DBMgr struct {
+	db DB
+}
+
+func {{$table.Name}}DBMgr(db DB) *_{{$table.Name}}DBMgr {
+	return &_{{$table.Name}}DBMgr{db: db}
+}
+
+{{template "table.primary" $table.PrimaryKey}}
+
+{{range $i, $unqiue := $table.Uniques}}
+{{template "table.unique" $unqiue}}
+{{end}}
+
+{{range $i, $index := $table.Indexes}}
+{{template "table.index" $index}}
+{{end}}
+
+{{template "table.read" $table}}
+
+{{template "table.write" $table}}
+
+{{end}}

@@ -1,0 +1,16 @@
+{{define "table"}}{{- $table := .Table -}}
+{{- $primary := $table.PrimaryKey -}}
+CREATE TABLE `{{$table.DBName}}` (
+	{{- range $i, $field := $table.Fields}}
+	{{$field.DBColumn}}  {{$field.DBType}} {{$field.DBNull}} {{$field.DBDefault}} COMMENT '{{$field.Comment}}',
+	{{- end}}
+    {{- range $i, $unique := $table.Uniques}}
+    UNIQUE KEY `{{$unique.Name}}UK`({{$unique.JoinFields ","}}),
+    {{- end}}
+    PRIMARY KEY({{$primary.JoinFields ","}})
+) ENGINE={{$table.DBEngine "InnoDB"}} AUTO_INCREMENT={{$table.AutoIncrement "0"}} DEFAULT CHARSET={{$table.DBCharset "utf8mb4"}} COMMENT '{{$table.Comment}}';
+
+{{range $i, $index := $table.Indexes -}}
+CREATE INDEX `{{$index.Name}}IDX` ON `{{$table.DBName}}`({{$index.JoinFields ","}});
+{{end -}}
+{{- end}}

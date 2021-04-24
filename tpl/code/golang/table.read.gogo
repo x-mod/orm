@@ -1,0 +1,143 @@
+{{define "table.read"}}{{- $obj := . -}}
+func (m *_{{$obj.Name}}DBMgr) FetchByPK(ctx context.Context, pk *{{$obj.Name}}PK) (*{{$obj.Name}}, error) {
+    return m.FetchOne(ctx, pk.SQLFormat(), pk.SQLParams()...)
+}
+
+func (m *_{{$obj.Name}}DBMgr) FetchOne(ctx context.Context, conditions []string, args ...interface{}) (*{{$obj.Name}}, error) {
+    objs, err := m.QueryContext(ctx, conditions, "", 0, 1, args...)
+    if err != nil {
+        return nil, err
+    }
+    if len(objs) == 0 {
+        return nil, errors.New("no record")
+    }
+    return objs[0], nil
+}
+
+func (m *_{{$obj.Name}}DBMgr) Fetch(ctx context.Context, conditions []string, args ...interface{}) ([]*{{$obj.Name}}, error) {
+    return m.QueryContext(ctx, conditions, "", 0, 0, args...)
+}
+
+func (m *_{{$obj.Name}}DBMgr) CountContext(ctx context.Context, conditions []string, args ...interface{}) (int64, error) {
+	qs := []string{
+        "SELECT",
+        "count(1)",
+        "FROM",
+        "%s",
+    }
+    ps := []interface{}{
+        "{{$obj.DBName}}",
+    }
+    if len(conditions) != 0 {
+        qs = append(qs, "WHERE")
+        qs = append(qs, "%s")
+        ps = append(ps, strings.Join(conditions, " AND "))
+    }
+    q := fmt.Sprintf(strings.Join(qs, " "), ps...)
+    return m.countContext(ctx, q, args...)
+}
+
+func (m *_{{$obj.Name}}DBMgr) QueryContext(ctx context.Context, conditions []string, orderBy string, offset int, limit int, args ...interface{}) ([]*{{$obj.Name}}, error) {
+	qs := []string{
+        "SELECT",
+        "%s",
+        "FROM",
+        "%s",
+    }
+    ps := []interface{}{
+        strings.Join({{$obj.Name}}DBColumns, ","),
+        "{{$obj.DBName}}",
+    }
+    if len(conditions) != 0 {
+        qs = append(qs, "WHERE")
+        qs = append(qs, "%s")
+        ps = append(ps, strings.Join(conditions, " AND "))
+    }
+    qs = append(qs, orderBy)
+    if limit > 0 {
+        if offset > 0 {
+            qs = append(qs, "LIMIT %d, %d")
+            ps = append(ps, offset, limit)
+        } else {
+            qs = append(qs, "LIMIT %d")
+            ps = append(ps, limit)
+        }
+    }
+    q := fmt.Sprintf(strings.Join(qs, " "), ps...)
+    return m.queryContext(ctx, q, args...)
+}
+
+func (m *_{{$obj.Name}}DBMgr) queryContext(ctx context.Context, q string, args ... interface{}) ([]*{{$obj.Name}}, error) {
+	rows, err := m.db.QueryContext(ctx, q, args...)	
+	if err != nil {
+		return nil, errors.Annotatef(err, "query %s %v", q, args)
+	}
+	defer rows.Close()
+
+	objs := []*{{$obj.Name}}{}
+	for rows.Next() {
+		var obj {{$obj.Name}}
+
+		{{- range $index, $field := $obj.Fields}}
+			{{- if $field.IsTime }}
+			var {{$field.Name}} int64
+			{{- else if $field.IsNullable}}
+			var {{$field.Name}} {{$field.SQLNullType}}
+			{{- end }}
+		{{- end }}
+
+		err = rows.Scan(
+		{{- range $index, $field := $obj.Fields -}}
+			{{- if or $field.IsTime $field.IsNullable}}
+			&{{$field.Name}},
+			{{- else -}}
+			&(obj.{{$field.Name}}),
+			{{- end -}}			
+		{{- end -}}
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		{{range $index, $field := $obj.Fields}}
+			{{- if $field.IsTime }}
+				tm{{$field.Name}} := time.Unix({{$field.Name}}, 0)	
+				{{- if $field.IsNullable }}
+                if {{$field.Name}} > 0 {
+                    obj.{{$field.Name}} = &tm{{$field.Name}}
+                }				
+				{{- else}}
+				obj.{{$field.Name}} = tm{{$field.Name}}
+				{{- end}}
+			{{- else if $field.IsNullable}}
+				if {{$field.Name}}.Valid {
+					obj.{{$field.Name}} = {{$field.Type "golang"}}({{$field.Name}}.{{$field.SQLNullValueField}})
+				}
+			{{- end }}
+			{{- if $field.IsEncode}}
+			obj.{{$field.Name}} = Encoder.Decode(obj.{{$field.Name}})
+			{{- end}}
+		{{- end}}
+
+		objs = append(objs, &obj)
+	}
+	return objs, nil
+}
+
+func (m *_{{$obj.Name}}DBMgr) countContext(ctx context.Context, q string, args ... interface{}) (int64, error) {
+	rows, err := m.db.QueryContext(ctx, q, args...)	
+	if err != nil {
+		return 0, errors.Annotatef(err, "query %s %v", q, args)
+	}
+	defer rows.Close()
+
+	var count int64
+	for rows.Next() {
+		if err = rows.Scan(&count); err != nil {
+			return 0, err
+		}
+		break
+	}
+	return count, nil
+}
+{{end}}

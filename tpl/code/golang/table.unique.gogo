@@ -1,0 +1,41 @@
+{{define "table.unique"}}{{- $unique := . -}}
+type {{$unique.Name}}UK struct{
+	{{- range $field := $unique.Fields}}
+    {{$field.Name}}  {{$field.Type "golang"}} 
+    {{- end}}
+}
+
+func (m *_{{$unique.Table.Name}}Mgr) New{{$unique.Name}}UK() *{{$unique.Name}}UK {
+		return &{{$unique.Name}}UK{}
+}
+
+func (u *{{$unique.Name}}UK) SQLFormat() []string {
+	return []string{
+		{{- range $j, $field := $unique.Fields}}
+		"{{$field.DBColumn}} = ?",
+		{{- end}}
+	}
+}
+
+func (u *{{$unique.Name}}UK) SQLParams() []interface{} {
+	return []interface{}{
+		{{- range $j, $field := $unique.Fields}}
+			{{- if $field.IsPassword}}
+			Password(u.{{$field.Value}}),       
+			{{- else if $field.IsEncode}}
+			Encoder.Encode(u.{{$field.Value}}),
+			{{- else }}
+			u.{{$field.Value}},
+			{{- end}}
+		{{- end}}
+	}
+}
+
+func (u *{{$unique.Name}}UK) DBColumns() []string {
+	return []string{
+		{{- range $j, $field := $unique.Fields}}
+		"{{$field.DBColumn}}",
+		{{- end}}
+	}
+}
+{{end}}
