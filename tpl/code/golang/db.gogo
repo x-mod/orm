@@ -270,6 +270,48 @@ func (c *b64Cipher) Decode(src string) string {
 	return string(decoded)
 }
 
+//DBMgr
+type _DBMgr struct {
+	db DB
+}
+
+func DBMgr(db DB) *_DBMgr {
+	return &_DBMgr{db: db}
+}
+
+func (m *_DBMgr) TableExist(ctx context.Context, database string, table string) (bool, error) {
+	qs := []string{
+		"SELECT",
+		"count(1)",
+		"FROM",
+		"INFORMATION_SCHEMA.TABLES",
+		"WHERE",
+		"TABLE_SCHEMA = ?",
+		"AND",
+		"TABLE_NAME = ?",
+	}
+	ps := []interface{}{
+		database,
+		table,
+	}
+
+	rows, err := m.db.QueryContext(ctx, strings.Join(qs, " "), ps...)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+
+	var count int64
+	for rows.Next() {
+		if err = rows.Scan(&count); err != nil {
+			return false, err
+		}
+		break
+	}
+	return count != 0, nil
+}
+
+//utils
 var Password PasswordFunc
 var Encoder  Cipher
 

@@ -124,6 +124,7 @@ func generateCode(in string, out string, suffix string, objects ...string) error
 			log.Println("gofmt: ", err)
 		}
 	}
+
 	for _, tb := range tables {
 		outfile := filepath.Join(out, fmt.Sprintf("gen.table.%s.go", tb.Name()))
 		wr, err := os.OpenFile(outfile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)

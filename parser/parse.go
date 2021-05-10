@@ -19,6 +19,7 @@ func Parse(filename string) ([]*object.Object, error) {
 		if err != nil {
 			return nil, err
 		}
+		obj.Adjust()
 		objs = append(objs, &obj)
 	}
 	return objs, nil

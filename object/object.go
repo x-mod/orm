@@ -37,6 +37,12 @@ type Object struct {
 	Attributes map[string]interface{} `yaml:"attributes,omitempty"`
 }
 
+func (obj *Object) Adjust() {
+	obj.Comment = strings.ReplaceAll(obj.Comment, ";", "")
+	for _, field := range obj.Fields {
+		field.Comment = strings.ReplaceAll(field.Comment, ";", "")
+	}
+}
 func (obj *Object) IsTable() bool {
 	if strings.ToLower(obj.Object) == "table" {
 		return true

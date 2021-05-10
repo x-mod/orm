@@ -9,8 +9,7 @@ CREATE TABLE `{{$table.DBName}}` (
     {{- end}}
     PRIMARY KEY({{$primary.JoinFields ","}})
 ) ENGINE={{$table.DBEngine "InnoDB"}} AUTO_INCREMENT={{$table.AutoIncrement "0"}} DEFAULT CHARSET={{$table.DBCharset "utf8mb4"}} COMMENT '{{$table.Comment}}';
-
 {{range $i, $index := $table.Indexes -}}
-CREATE INDEX `{{$index.Name}}IDX` ON `{{$table.DBName}}`({{$index.JoinFields ","}});
-{{end -}}
-{{- end}}
+CREATE INDEX `{{$index.Name}}IDX` ON `{{$table.DBName}}` ({{$index.JoinFields ","}});
+{{- end -}}
+{{- end -}}
