@@ -46,7 +46,7 @@ func generateScripts(in string, out string, suffix string, objects ...string) er
 	}
 
 	for _, tb := range tables {
-		outfile := filepath.Join(out, fmt.Sprintf("gen.scripts.%s.sql", tb.Name()))
+		outfile := filepath.Join(out, fmt.Sprintf("%s.sql", tb.DBName()))
 		wr, err := os.OpenFile(outfile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			return errors.Annotatef(err, "write file %s", outfile)
