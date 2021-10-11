@@ -32,6 +32,8 @@ var {{$table.Name}}DBColumns = []string {
     {{- end}}
 }
 
+var {{$table.Name}}DBTable = "{{$table.DBName}}"
+
 type _{{$table.Name}}Mgr struct {
 }
 var {{$table.Name}}Mgr *_{{$table.Name}}Mgr

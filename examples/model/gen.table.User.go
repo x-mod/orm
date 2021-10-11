@@ -36,6 +36,8 @@ var UserDBColumns = []string{
 	"`update_at`",
 }
 
+var UserDBTable = "user"
+
 type _UserMgr struct {
 }
 
