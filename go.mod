@@ -12,5 +12,6 @@ require (
 	github.com/x-mod/cmd v0.2.11
 	github.com/x-mod/dir v0.0.8
 	github.com/x-mod/errors v0.2.3
-	gopkg.in/yaml.v2 v2.2.4
+	github.com/x-mod/glog v0.1.0
+	gopkg.in/yaml.v2 v2.2.8
 )
