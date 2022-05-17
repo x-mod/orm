@@ -2,7 +2,7 @@
 func (m *_{{$obj.Name}}DBMgr) QueryContext(ctx context.Context, q string, args ... interface{}) ([]*{{$obj.Name}}, error) {
 	rows, err := m.db.QueryContext(ctx, q, args...)	
 	if err != nil {
-		return nil, errors.Annotatef(err, "query %s %v", q, args)
+		return nil, fmt.Errorf("query (%s %v): %w", q, args, err)
 	}
 	defer rows.Close()
 
@@ -57,7 +57,7 @@ func (m *_{{$obj.Name}}DBMgr) QueryContext(ctx context.Context, q string, args .
 func (m *_{{$obj.Name}}DBMgr) CountContext(ctx context.Context, q string, args ... interface{}) (int64, error) {
 	rows, err := m.db.QueryContext(ctx, q, args...)	
 	if err != nil {
-		return 0, errors.Annotatef(err, "query %s %v", q, args)
+		return 0, fmt.Errorf("query (%s %v): %w", q, args, err)
 	}
 	defer rows.Close()
 

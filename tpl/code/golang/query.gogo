@@ -5,8 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"time"
-
-	"github.com/x-mod/errors"
+    "fmt"
 )
 
 var (

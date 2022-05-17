@@ -8,13 +8,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/x-mod/dir"
 	"github.com/x-mod/errors"
 	"github.com/x-mod/orm/object"
 	"github.com/x-mod/orm/parser"
 )
 
-func generateScripts(in string, out string, suffix string, objects ...string) error {
-	t, err := getTemplate(strings.Join(objects, "/"))
+func generateScripts(root *dir.Dir, in string, out string, suffix string, objects ...string) error {
+	t, err := getTemplate(root, objects...)
 	if err != nil {
 		return err
 	}
@@ -61,11 +62,11 @@ func generateScripts(in string, out string, suffix string, objects ...string) er
 			return errors.Annotatef(err, "close file %s", outfile)
 		}
 	}
-	return copyFilesExcludeSuffix(strings.Join(objects, "/"), suffix, out, true)
+	return copyFilesExcludeSuffix(root, strings.Join(objects, "/"), suffix, out, true)
 }
 
-func generateCode(in string, out string, suffix string, objects ...string) error {
-	t, err := getTemplate(strings.Join(objects, "/"))
+func generateCode(root *dir.Dir, in string, out string, suffix string, objects ...string) error {
+	t, err := getTemplate(root, strings.Join(objects, "/"))
 	if err != nil {
 		return err
 	}
@@ -167,5 +168,5 @@ func generateCode(in string, out string, suffix string, objects ...string) error
 		}
 	}
 
-	return copyFilesExcludeSuffix(strings.Join(objects, "/"), suffix, out, true)
+	return copyFilesExcludeSuffix(root, strings.Join(objects, "/"), suffix, out, true)
 }

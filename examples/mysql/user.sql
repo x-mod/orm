@@ -9,5 +9,4 @@ CREATE TABLE `user` (
     UNIQUE KEY `UserNameUK`(`name`),
     PRIMARY KEY(`id`)
 ) ENGINE=innodb AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COMMENT '';
-
-CREATE INDEX `UserAgeSexIDX` ON `user`(`age`,`sex`);
+CREATE INDEX `UserAgeSexIDX` ON `user` (`age`,`sex`);

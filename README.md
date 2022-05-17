@@ -114,10 +114,25 @@ Flags:
   -o, --output string            output directory (default ".")
   -t, --template-suffix string   template suffix (default ".gogo")
       --version                  version for orm
+  -c, --workdir string           orm workdir (default: $HOME/.orm)
 
 Use "orm [command] --help" for more information about a command.
 ```
 
 ## 修改模板
 
-TODO
+安装 `orm` 命令后，完成首次代码生成后，默认代码生成模板文件会安装到 `$HOME/.orm` 文件夹。
+
+用户可以根据自己的需求修改代码生成模板实现个性化配置。
+
+**生成 Golang 代码**
+
+```go
+$: orm -i ./examples -o ./examples/model code golang
+```
+
+**生成 Mysql 脚本**
+
+```go
+$: orm -i ./examples -o ./examples/mysql script mysql
+```

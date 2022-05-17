@@ -1,6 +1,10 @@
 package gen
 
 import (
+	"fmt"
+	"path"
+
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 	"github.com/x-mod/cmd"
 	"github.com/x-mod/dir"
@@ -38,6 +42,20 @@ func init() {
 }
 
 func ScriptMySQL(c *cmd.Command, args []string) error {
+	root := viper.GetString("workdir")
+	if root == "" {
+		home, err := homedir.Dir()
+		if err != nil {
+			return err
+		}
+		root = path.Join(home, ".orm")
+	}
+	workdir := dir.New(
+		dir.Root(root),
+	)
+	if err := workdir.EmbedSkip(1, "tpl"); err != nil {
+		return fmt.Errorf("embed orm: %v", err)
+	}
 	in := dir.New(dir.Root(viper.GetString("input")))
 	if err := in.Open(); err != nil {
 		return err
@@ -48,10 +66,24 @@ func ScriptMySQL(c *cmd.Command, args []string) error {
 	}
 	suffix := viper.GetString("template-suffix")
 	packageName = viper.GetString("go-package-name")
-	return generateScripts(in.Path(), out.Path(), suffix, "scripts", "mysql")
+	return generateScripts(workdir, in.Path(), out.Path(), suffix, "scripts", "mysql")
 }
 
 func CodeGolang(c *cmd.Command, args []string) error {
+	root := viper.GetString("workdir")
+	if root == "" {
+		home, err := homedir.Dir()
+		if err != nil {
+			return err
+		}
+		root = path.Join(home, ".orm")
+	}
+	workdir := dir.New(
+		dir.Root(root),
+	)
+	if err := workdir.EmbedSkip(1, "tpl"); err != nil {
+		return fmt.Errorf("embed orm: %v", err)
+	}
 	in := dir.New(dir.Root(viper.GetString("input")))
 	if err := in.Open(); err != nil {
 		return err
@@ -62,5 +94,5 @@ func CodeGolang(c *cmd.Command, args []string) error {
 	}
 	suffix := viper.GetString("template-suffix")
 	packageName = viper.GetString("go-package-name")
-	return generateCode(in.Path(), out.Path(), suffix, "code", "golang")
+	return generateCode(workdir, in.Path(), out.Path(), suffix, "code", "golang")
 }

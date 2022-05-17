@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/x-mod/errors"
 )
 
 var (
@@ -147,7 +145,7 @@ func (m *_UserDBMgr) FetchOne(ctx context.Context, conditions []string, args ...
 		return nil, err
 	}
 	if len(objs) == 0 {
-		return nil, errors.New("no record")
+		return nil, fmt.Errorf("no record")
 	}
 	return objs[0], nil
 }
@@ -208,7 +206,7 @@ func (m *_UserDBMgr) QueryContext(ctx context.Context, conditions []string, orde
 func (m *_UserDBMgr) queryContext(ctx context.Context, q string, args ...interface{}) ([]*User, error) {
 	rows, err := m.db.QueryContext(ctx, q, args...)
 	if err != nil {
-		return nil, errors.Annotatef(err, "query %s %v", q, args)
+		return nil, fmt.Errorf("query (%s %v): %w", q, args, err)
 	}
 	defer rows.Close()
 
@@ -250,7 +248,7 @@ func (m *_UserDBMgr) queryContext(ctx context.Context, q string, args ...interfa
 func (m *_UserDBMgr) countContext(ctx context.Context, q string, args ...interface{}) (int64, error) {
 	rows, err := m.db.QueryContext(ctx, q, args...)
 	if err != nil {
-		return 0, errors.Annotatef(err, "query %s %v", q, args)
+		return 0, fmt.Errorf("query (%s %v): %w", q, args, err)
 	}
 	defer rows.Close()
 
@@ -266,7 +264,7 @@ func (m *_UserDBMgr) countContext(ctx context.Context, q string, args ...interfa
 
 func (m *_UserDBMgr) DeleteByPK(ctx context.Context, pk *UserPK) (int64, error) {
 	if pk == nil {
-		return 0, errors.New("delete pk required")
+		return 0, fmt.Errorf("delete pk required")
 	}
 	return m.Delete(ctx, pk.SQLFormat(), pk.SQLParams()...)
 }
@@ -287,13 +285,13 @@ func (m *_UserDBMgr) Delete(ctx context.Context, conditions []string, args ...in
 		q := fmt.Sprintf(strings.Join(qs, " "), ps...)
 		return m.execContext(ctx, q, args...)
 	}
-	return 0, errors.New("delete conditions required")
+	return 0, fmt.Errorf("delete conditions required")
 }
 
 func (m *_UserDBMgr) execContext(ctx context.Context, q string, args ...interface{}) (int64, error) {
 	result, err := m.db.ExecContext(ctx, q, args...)
 	if err != nil {
-		return 0, errors.Annotatef(err, "exec %s %v", q, args)
+		return 0, fmt.Errorf("execute (%s %v): %w", q, args, err)
 	}
 	return result.RowsAffected()
 }
@@ -372,7 +370,7 @@ func (m *_UserDBMgr) Create(ctx context.Context, obj *User) (int64, error) {
 
 	result, err := m.db.ExecContext(ctx, q, values...)
 	if err != nil {
-		return 0, errors.Annotatef(err, "exec %s %v", q, values)
+		return 0, fmt.Errorf("execute (%s %v): %w", q, values, err)
 	}
 	lastInsertId, err := result.LastInsertId()
 	if err != nil {

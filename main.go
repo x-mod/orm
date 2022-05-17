@@ -1,14 +1,21 @@
 package main
 
 import (
+	"embed"
+
 	"github.com/x-mod/build"
 	"github.com/x-mod/cmd"
+	"github.com/x-mod/dir"
 	_ "github.com/x-mod/orm/gen"
 )
 
-//go:generate go-bindata -prefix tpl -nometadata -o tpl/bindata.go -ignore bindata.go -pkg tpl tpl/...
+//go:embed tpl/*
+var embeddir embed.FS
+
 func main() {
+	dir.EmbedFS = embeddir
 	cmd.Version(build.String())
+	cmd.PersistentFlags().StringP("workdir", "c", "", "orm workdir (default: $HOME/.orm)")
 	cmd.PersistentFlags().StringP("input", "i", ".", "input directory")
 	cmd.PersistentFlags().StringP("output", "o", ".", "output directory")
 	cmd.PersistentFlags().StringP("template-suffix", "t", ".gogo", "template suffix")

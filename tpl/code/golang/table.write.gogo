@@ -3,7 +3,7 @@
 
 func (m *_{{$obj.Name}}DBMgr) DeleteByPK(ctx context.Context, pk *{{$obj.Name}}PK) (int64, error) {
 	if pk == nil {
-        return 0, errors.New("delete pk required")
+        return 0, fmt.Errorf("delete pk required")
     }
     return m.Delete(ctx, pk.SQLFormat(), pk.SQLParams()...)
 }
@@ -24,13 +24,13 @@ func (m *_{{$obj.Name}}DBMgr) Delete(ctx context.Context, conditions []string, a
         q := fmt.Sprintf(strings.Join(qs, " "), ps...)
         return m.execContext(ctx, q, args...)   
     }
-    return 0, errors.New("delete conditions required")
+    return 0, fmt.Errorf("delete conditions required")
 }
 
 func (m *_{{$obj.Name}}DBMgr) execContext(ctx context.Context, q string, args ...interface{}) (int64, error) {
     result, err := m.db.ExecContext(ctx, q, args...)
     if err != nil {
-        return 0, errors.Annotatef(err, "exec %s %v", q, args)
+        return 0, fmt.Errorf("execute (%s %v): %w", q, args, err)        
     }
     return result.RowsAffected()
 }
@@ -137,7 +137,7 @@ func (m *_{{$obj.Name}}DBMgr) Create(ctx context.Context, obj *{{$obj.Name}}) (i
     
     result, err := m.db.ExecContext(ctx, q, values...)
     if err != nil {
-        return 0, errors.Annotatef(err, "exec %s %v", q, values)
+        return 0, fmt.Errorf("execute (%s %v): %w", q, values, err)        
     }
 
     {{- range $i, $field := $obj.PrimaryKey.Fields}}

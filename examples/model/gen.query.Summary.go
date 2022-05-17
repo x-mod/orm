@@ -3,9 +3,8 @@ package model
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
-
-	"github.com/x-mod/errors"
 )
 
 var (
@@ -47,7 +46,7 @@ func SummaryDBMgr(db DB) *_SummaryDBMgr {
 func (m *_SummaryDBMgr) QueryContext(ctx context.Context, q string, args ...interface{}) ([]*Summary, error) {
 	rows, err := m.db.QueryContext(ctx, q, args...)
 	if err != nil {
-		return nil, errors.Annotatef(err, "query %s %v", q, args)
+		return nil, fmt.Errorf("query (%s %v): %w", q, args, err)
 	}
 	defer rows.Close()
 
@@ -74,7 +73,7 @@ func (m *_SummaryDBMgr) QueryContext(ctx context.Context, q string, args ...inte
 func (m *_SummaryDBMgr) CountContext(ctx context.Context, q string, args ...interface{}) (int64, error) {
 	rows, err := m.db.QueryContext(ctx, q, args...)
 	if err != nil {
-		return 0, errors.Annotatef(err, "query %s %v", q, args)
+		return 0, fmt.Errorf("query (%s %v): %w", q, args, err)
 	}
 	defer rows.Close()
 
